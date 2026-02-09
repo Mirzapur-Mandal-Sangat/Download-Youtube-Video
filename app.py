@@ -9,7 +9,7 @@ CORS(app)
 
 @app.route('/')
 def home():
-    return "Technical Mind Backend is Live!"
+    return "Technical Mind Backend is Active!"
 
 @app.route('/get_links', methods=['POST'])
 def get_links():
@@ -17,13 +17,13 @@ def get_links():
         data = request.json
         video_url = data.get('url')
         if not video_url:
-            return jsonify({"error": "Link missing!"}), 400
+            return jsonify({"error": "URL missing"}), 400
 
-        # yt-dlp settings: Isse video aur audio saath mein aayenge
+        # yt-dlp settings jo audio aur video merge karke deti hain
         ydl_opts = {
             'quiet': True,
             'no_warnings': True,
-            'format': 'best', 
+            'format': 'best',
             'nocheckcertificate': True,
             'headers': {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
@@ -32,26 +32,28 @@ def get_links():
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(video_url, download=False)
+            title = info.get('title', 'Video')
+            thumbnail = info.get('thumbnail', '')
             
-            # Formats nikalna jisme sound ho
+            # Formats nikalna jisme audio aur video dono ho
             formats = info.get('formats', [])
             download_links = []
             
             for f in formats:
                 if f.get('vcodec') != 'none' and f.get('acodec') != 'none':
-                    quality = f.get('format_note') or f.get('resolution') or "HD"
+                    quality = f.get('format_note') or f.get('resolution') or "720p"
                     download_links.append({
                         "quality": quality,
                         "url": f.get('url')
                     })
 
-            # Agar koi format na mile toh default link dena
             if not download_links:
-                download_links.append({"quality": "Best Quality", "url": info.get('url')})
+                # Agar koi direct link na mile
+                download_links.append({"quality": "Best", "url": info.get('url')})
 
             return jsonify({
-                "title": info.get('title', 'Video'),
-                "thumbnail": info.get('thumbnail', ''),
+                "title": title,
+                "thumbnail": thumbnail,
                 "links": download_links[-2:] # Best 2 quality links
             })
     except Exception as e:
