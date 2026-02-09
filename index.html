@@ -3,44 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Technical Mind - Video Downloader</title>
+    <title>Technical Mind - HD Audio/Video</title>
     <style>
-        body { font-family: 'Arial', sans-serif; background: #f0f2f5; color: #333; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .container { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 400px; width: 90%; text-align: center; }
-        h2 { color: #d32f2f; margin-bottom: 20px; }
-        input { width: 90%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
-        button { width: 96%; padding: 12px; background: #d32f2f; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; }
-        button:hover { background: #b71c1c; }
-        #result { margin-top: 20px; }
-        .download-btn { display: block; margin-top: 10px; padding: 10px; background: #2e7d32; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; }
-        .error { color: #c62828; font-size: 14px; margin-top: 10px; }
+        body { font-family: sans-serif; background: #f9f9f9; text-align: center; padding: 40px; }
+        .box { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); max-width: 400px; margin: auto; }
+        input { width: 85%; padding: 12px; margin: 15px 0; border: 2px solid #ddd; border-radius: 8px; }
+        button { width: 90%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        #status { margin-top: 20px; font-weight: bold; }
+        .dl-link { display: block; margin-top: 15px; padding: 10px; background: #28a745; color: white; text-decoration: none; border-radius: 5px; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>YouTube Downloader</h2>
-    <input type="text" id="videoLink" placeholder="Video link yahan paste karein...">
-    <button id="btn" onclick="downloadVideo()">Get Download Link</button>
-    <div id="result"></div>
+<div class="box">
+    <h2 style="color: #007bff;">HD Video + Audio</h2>
+    <input type="text" id="url" placeholder="Paste YouTube Link...">
+    <button onclick="download()">Download 1080p</button>
+    <div id="status"></div>
 </div>
 
 <script>
-async function downloadVideo() {
-    const videoUrl = document.getElementById('videoLink').value;
-    const resultDiv = document.getElementById('result');
-    const btn = document.getElementById('btn');
+async function download() {
+    const videoUrl = document.getElementById('url').value;
+    const status = document.getElementById('status');
+    if(!videoUrl) return alert("Link daalein!");
 
-    if (!videoUrl) {
-        alert("Pehle link toh paste karo!");
-        return;
-    }
-
-    resultDiv.innerHTML = "Processing... Thoda ruko.";
-    btn.disabled = true;
+    status.innerHTML = "Merging Audio + Video... Please wait.";
 
     try {
-        // Cobalt API ka use kar rahe hain jo ki zyada stable hai
         const response = await fetch('https://api.cobalt.tools/api/json', {
             method: 'POST',
             headers: {
@@ -49,30 +39,22 @@ async function downloadVideo() {
             },
             body: JSON.stringify({
                 url: videoUrl,
-                vQuality: "720", // Default High Quality
-                filenamePattern: "basic"
+                vQuality: "1080",
+                vCodec: "h264", // Sabse stable format audio ke liye
+                isAudioMuted: false
             })
         });
 
         const data = await response.json();
-
-        if (data.status === 'stream' || data.status === 'picker' || data.url) {
-            const finalUrl = data.url;
-            resultDiv.innerHTML = `
-                <p style="color:green; font-weight:bold;">Video Mil Gayi!</p>
-                <a href="${finalUrl}" class="download-btn" target="_blank">Download High Quality MP4</a>
-                <p style="font-size:12px; color:#777; margin-top:10px;">Note: Link open hone par 3 dots par click karke download chunein agar auto-start na ho.</p>
-            `;
+        if(data.url) {
+            status.innerHTML = `<a href="${data.url}" class="dl-link" target="_blank">Download HD MP4 (With Sound)</a>`;
         } else {
-            throw new Error("API Response Error");
+            status.innerHTML = "Server Busy. 10 second baad dobara koshish karein.";
         }
-    } catch (error) {
-        resultDiv.innerHTML = "<p class='error'>Error: API abhi busy hai ya link galat hai. Dobara koshish karein.</p>";
-    } finally {
-        btn.disabled = false;
+    } catch (e) {
+        status.innerHTML = "Error! Link check karein ya API down hai.";
     }
 }
 </script>
-
 </body>
 </html>
