@@ -3,24 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Technical Mind - Video Downloader</title>
+    <title>Technical Mind - HD Downloader</title>
     <style>
-        body { font-family: sans-serif; background: #f4f4f4; text-align: center; padding: 50px; }
-        .container { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }
-        input { width: 80%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; }
-        button { padding: 10px 20px; background: red; color: white; border: none; border-radius: 5px; cursor: pointer; }
-        #result { margin-top: 20px; }
-        .download-btn { display: block; margin: 10px auto; padding: 8px; background: green; color: white; text-decoration: none; border-radius: 5px; width: fit-content; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0f0f0f; color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .container { background: #1e1e1e; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); max-width: 450px; width: 90%; text-align: center; border: 1px solid #333; }
+        h2 { color: #ff0000; margin-bottom: 10px; }
+        input { width: 90%; padding: 12px; margin: 15px 0; border: 1px solid #444; border-radius: 8px; background: #121212; color: white; outline: none; }
+        input:focus { border-color: #ff0000; }
+        button { width: 95%; padding: 12px; background: #ff0000; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; transition: 0.3s; }
+        button:hover { background: #cc0000; transform: scale(1.02); }
+        #result { margin-top: 25px; text-align: left; }
+        .video-card { background: #252525; padding: 10px; border-radius: 8px; margin-bottom: 15px; }
+        .download-btn { display: block; margin: 8px 0; padding: 10px; background: #2ba640; color: white; text-decoration: none; border-radius: 5px; text-align: center; font-size: 14px; transition: 0.2s; }
+        .download-btn:hover { background: #238533; }
+        .loader { color: #aaa; font-style: italic; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>YouTube Downloader</h2>
-    <p>Video link yahan paste karein:</p>
-    <input type="text" id="videoLink" placeholder="https://www.youtube.com/watch?v=...">
-    <br>
-    <button onclick="fetchVideo()">Get Download Links</button>
+    <h2>Technical Mind</h2>
+    <p style="font-size: 14px; color: #aaa;">HD Video Downloader</p>
+    <input type="text" id="videoLink" placeholder="YouTube link yahan paste karein...">
+    <button onclick="fetchVideo()">Download Now</button>
 
     <div id="result"></div>
 </div>
@@ -30,30 +35,41 @@ async function fetchVideo() {
     const url = document.getElementById('videoLink').value;
     const resultDiv = document.getElementById('result');
     
-    if(!url) { alert("Please paste a link!"); return; }
+    if(!url) { alert("Pehle link toh paste karo bhai!"); return; }
     
-    resultDiv.innerHTML = "Processing...";
+    resultDiv.innerHTML = "<p class='loader'>Video dhund raha hoon, thoda ruko...</p>";
 
     try {
-        // YouTube URL se Video ID nikalna
-        const videoId = url.split('v=')[1]?.split('&')[0] || url.split('/').pop();
+        // Universal Video ID Extractor (Supports Shorts, Mobile, & Desktop links)
+        const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/|youtube\.com\/shorts\/)([^"&?\/\s]{11})/;
+        const match = url.match(regex);
+        const videoId = match ? match[1] : null;
+
+        if (!videoId) { throw new Error("Invalid Link"); }
         
-        // Piped API ka use (Free & Open Source)
+        // Piped API (Fast & Reliable)
         const response = await fetch(`https://pipedapi.kavin.rocks/streams/${videoId}`);
+        if (!response.ok) throw new Error();
         const data = await response.json();
 
-        let html = `<h3>${data.title}</h3>`;
+        let html = `
+            <div class="video-card">
+                <img src="https://img.youtube.com/vi/${videoId}/mqdefault.jpg" style="width:100%; border-radius:5px; margin-bottom:10px;">
+                <strong style="font-size:15px;">${data.title}</strong>
+            </div>
+            <p style="font-size:13px; color:#aaa;">Qualities Available:</p>
+        `;
         
-        // Video Links (High Quality)
+        // Filter out high-quality streams that include Audio
         data.videoStreams.forEach(stream => {
-            if(stream.videoOnly === false) { // Jahan Audio+Video dono ho
+            if(stream.videoOnly === false) { 
                 html += `<a class="download-btn" href="${stream.url}" target="_blank">Download ${stream.quality} (.mp4)</a>`;
             }
         });
 
         resultDiv.innerHTML = html;
     } catch (error) {
-        resultDiv.innerHTML = "Error: Video nahi mil payi. Link check karein.";
+        resultDiv.innerHTML = "<p style='color:#ff4444;'>Error: Video nahi mili. Dusra link try karein.</p>";
     }
 }
 </script>
